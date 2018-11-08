@@ -50,9 +50,9 @@ class DBinit:
         """
         This method creates all the necessary settings
         """
-        username = 'juliennuellas'
-        email = 'julien.nuellas@gmail.com'
-        password = 'fitperf1987'
+        username = os.environ['DJANGO_SUPERUSER_USERNAME']
+        email = os.environ['DJANGO_SUPERUSER_EMAIL']
+        password = os.environ['DJANGO_SUPERUSER_PASSWORD']
 
         try:
             founder = User.objects.get(username=username)

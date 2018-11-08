@@ -79,9 +79,9 @@ WSGI_APPLICATION = 'fitperf_api.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'fitperf',
-        'USER': 'dev-user',
-        'PASSWORD': 'dev-password',
+        'NAME': os.environ['DB_NAME'],
+        'USER': os.environ['DB_USER'],
+        'PASSWORD': os.environ['DB_PASSWORD'],
         'HOST': '0.0.0.0',
         'PORT': '15432'
     }

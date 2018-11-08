@@ -6,9 +6,9 @@ services:
         ports:
             - "15432:5432"
         environment:
-            - POSTGRES_USER=dev-user
-            - POSTGRES_PASSWORD=dev-password
-            - POSTGRES_DB=fitperf
+            - POSTGRES_USER=${DB_USER}
+            - POSTGRES_PASSWORD=${DB_PASSWORD}
+            - POSTGRES_DB=${DB_NAME}
         volumes:
             - fitperf-data:/var/lib/postgresql/data
 volumes:
