@@ -38,6 +38,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
+    # 3rd-party
+    'rest_framework',
+
     # Local
     'api.apps.ApiConfig',
 ]
@@ -53,6 +56,15 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'fitperf_api.urls'
+
+REST_FRAMEWORK = {
+    # Use Django's standard `django.contrib.auth` permissions,
+    # or allow read-only access for unauthenticated users.
+    'DEFAULT_PERMISSION_CLASSES': [
+        # 'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly'
+    'rest_framework.permissions.AllowAny',
+    ]
+}
 
 TEMPLATES = [
     {
