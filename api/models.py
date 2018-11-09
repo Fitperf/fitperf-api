@@ -146,6 +146,7 @@ class Movement(models.Model):
                                 verbose_name="Equipement")
     founder = models.ForeignKey(User,
                                 on_delete=models.CASCADE,
+                                related_name="movements",
                                 verbose_name="Createur")
     settings = models.ManyToManyField('MovementSettings',
                                      related_name='movements',
@@ -179,6 +180,7 @@ class MovementSettings(models.Model):
                             unique=True)
     founder = models.ForeignKey(User,
                             on_delete=models.CASCADE,
+                            related_name="movement_settings",
                             verbose_name="the movement setting's creator")
 
     setting_values = models.ManyToManyField('MovementsPerExercise',
@@ -198,6 +200,7 @@ class Equipment(models.Model):
 
     founder = models.ForeignKey(User,
                                 on_delete=models.CASCADE,
+                                related_name="equipments",
                                 verbose_name="the movement's creator")
 
     class Meta:
