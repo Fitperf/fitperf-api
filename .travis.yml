@@ -17,7 +17,6 @@ before_script:
   - docker-compose -f docker-compose.yml up -d
   - pip install pipenv
   - pipenv install --dev
-  - pipenv shell
-  
+
 script:
-  - ./manage.py test
+  - pipenv run ./manage.py test
