@@ -17,10 +17,7 @@ before_script:
   - docker-compose -f docker-compose.yml up -d
   - pip install pipenv
   - pipenv install --dev
-
-env:
-  global:
-    - DJANGO_SETTINGS_MODULE="fitperf.settings.travis"
-
+  - pipenv shell
+  
 script:
   - ./manage.py test
