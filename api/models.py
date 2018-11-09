@@ -200,8 +200,7 @@ class Equipment(models.Model):
 
     founder = models.ForeignKey(User,
                                 on_delete=models.CASCADE,
-                                related_name="equipments",
-                                verbose_name="the movement's creator")
+                                related_name="equipments")
 
     class Meta:
         verbose_name = 'equipement'
