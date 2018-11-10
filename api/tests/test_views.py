@@ -93,3 +93,5 @@ class MovementSettingsTest(APITestCase):
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(MovementSettings.objects.count(), initial_movement_settings + 1)
+
+    # def test_admin_get_one_movement_settings(self):
