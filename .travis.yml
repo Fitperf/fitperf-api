@@ -1,0 +1,22 @@
+sudo: required
+
+language: python
+
+python:
+  - "3.6"
+
+services:
+  - docker
+  
+branches:
+  only:
+    - master
+    - staging
+
+before_script:
+  - docker-compose -f docker-compose.yml up -d
+  - pip install pipenv
+  - pipenv install --dev
+
+script:
+  - pipenv run ./manage.py test
