@@ -2,18 +2,8 @@ from rest_framework import generics, permissions
 
 from django.contrib.auth.models import User
 from .models import Equipment, Movement, MovementSettings
-from .serializers import EquipmentSerializer, MovementSerializer, MovementSettingsSerializer, UserSerializer
+from .serializers import EquipmentSerializer, MovementSerializer, MovementSettingsSerializer
 from .permissions import IsAdminOrReadOnly, IsFounderOrReadOnly
-
-class UserList(generics.ListCreateAPIView):
-    permission_classes = (permissions.IsAdminUser)
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
-
-class UserDetail(generics.RetrieveUpdateDestroyAPIView):
-    permission_classes = (permissions.IsAdminUser)
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
 
 class EquipmentList(generics.ListCreateAPIView):
     permission_classes = (permissions.IsAuthenticated, IsAdminOrReadOnly,)
