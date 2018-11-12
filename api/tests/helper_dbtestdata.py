@@ -10,7 +10,7 @@ class TestDatabase:
     def create():
         # We create a users
         admin_user = User.objects.create_superuser(username='admin_user', password='admin_password', email="test@test.com")
-        ordinary_user = User.objects.create_user(username='ordinary_user', password='ordinary_user')
+        ordinary_user = User.objects.create_user(username='ordinary_user', password='ordinary_password', is_staff=False)
         new_user = User.objects.create_user(username='new_user', password='new_user')
 
         # We create some settings
