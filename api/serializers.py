@@ -35,7 +35,7 @@ class MovementsPerExerciseSerializer(serializers.ModelSerializer):
     Used as a nested serializer by Exercise Serializer
     """
     movement_settings = serializers.SerializerMethodField()
-
+    
     class Meta:
         model = MovementsPerExercise
         fields = ('id', 'movement', 'movement_number', 'movement_settings')
@@ -59,8 +59,26 @@ class ExerciseSerializer(serializers.ModelSerializer):
 
     # def create(self, validated_data):
         
-    #     exercise = Exercise.objects.create(**validated_data)
-    #     for movement in movements:
+    #     exercise = Exercise.objects.create(name=validated_data["name"],
+    #                                         exercise_type=validated_data["exercise_type"],
+    #                                         description=validated_data["description"],
+    #                                         goal_type=validated_data["goal_type"],
+    #                                         goal_value=validated_data["goal_value"],
+    #                                         founder=validated_data["founder"])
+    #     if validated_data["founder"].is_superuser:
+    #         exercise.is_default = True
+    #         exercise.save()
 
-        
+    #     for movement in validated_data["movements"]:
+    #         mvt = Movement.objects.get(pk=movement["movement"])
+    #         mvt_associated = MovementsPerExercise.objects.create(exercise=exercise,
+    #                                                             movement=mvt,
+    #                                                             movement_number=movement["movement_number"])
+            # for setting in movement["movement_settings"]:
+            #     setting_obj = MovementSettings.objects.get(pk=setting['id'])
+            #     setting_associated = MovementSettingsPerMovementsPerExercise.objects.create(exercise_movement=mvt_associated,
+            #                                                                                 setting=setting_obj,
+                                                                                            # setting_value=setting['setting_value'])
+
+        # return exercise
             

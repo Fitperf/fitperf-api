@@ -3,7 +3,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 from django.contrib.auth.models import User
-from ..models import Equipment, Movement, MovementSettings
+from ..models import Equipment, Movement, MovementSettings, Exercise, MovementsPerExercise, MovementSettingsPerMovementsPerExercise
 from .helper_dbtestdata import TestDatabase
 
 class EquipmentTest(APITestCase):
@@ -148,13 +148,8 @@ class EquipmentTest(APITestCase):
         self.client.login(username='admin_user', password='admin_password')
         initial_equipments = Equipment.objects.count()
         kb = Equipment.objects.get(name="kettlebell")
-        data = {
-            "id": kb.pk,
-            "name": kb.name,
-            "founder": kb.founder.pk
-        }
         url = reverse('equipment_detail', kwargs={'pk': kb.pk})
-        response = self.client.delete(url, data, format='json')
+        response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(Equipment.objects.count(), initial_equipments - 1)
 
@@ -231,13 +226,8 @@ class EquipmentTest(APITestCase):
         self.client.login(username='ordinary_user', password='ordinary_password')
         initial_equipments = Equipment.objects.count()
         kb = Equipment.objects.get(name="kettlebell")
-        data = {
-            "id": kb.pk,
-            "name": kb.name,
-            "founder": kb.founder.pk
-        }
         url = reverse('equipment_detail', kwargs={'pk': kb.pk})
-        response = self.client.delete(url, data, format='json')
+        response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(Equipment.objects.count(), initial_equipments)
 
@@ -380,13 +370,8 @@ class MovementSettingsTest(APITestCase):
         self.client.login(username='admin_user', password='admin_password')
         initial_movement_settings = MovementSettings.objects.count()
         rep = MovementSettings.objects.get(name=MovementSettings.REPETITIONS)
-        data = {
-            "id": rep.pk,
-            "name": rep.name,
-            "founder": rep.founder.pk
-        }
         url = reverse('movement_setting_detail', kwargs={'pk': rep.pk})
-        response = self.client.delete(url, data, format='json')
+        response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(MovementSettings.objects.count(), initial_movement_settings - 1)
 
@@ -463,14 +448,10 @@ class MovementSettingsTest(APITestCase):
         self.client.login(username='ordinary_user', password='ordinary_password')
         initial_movement_settings = MovementSettings.objects.count()
         rep = MovementSettings.objects.get(name=MovementSettings.REPETITIONS)
-        data = {
-            "id": rep.pk,
-            "name": rep.name,
-            "founder": rep.founder.pk
-        }
         url = reverse('movement_setting_detail', kwargs={'pk': rep.pk})
-        response = self.client.delete(url, data, format='json')
+        response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(MovementSettings.objects.count(), initial_movement_settings)
 
 class MovementTest(APITestCase):
     """
@@ -635,17 +616,8 @@ class MovementTest(APITestCase):
         self.client.login(username='admin_user', password='admin_password')
         initial_movements = Movement.objects.count()
         wallball = Movement.objects.get(name='wallball')
-        rep = MovementSettings.objects.get(name=MovementSettings.REPETITIONS)
-        weight = MovementSettings.objects.get(name=MovementSettings.WEIGHT)
-        data = {
-            "id": wallball.pk,
-            "name": "heavy wallball",
-            "founder": wallball.founder.pk,
-            "equipment": wallball.equipment.pk,
-            "settings": [rep.pk, weight.pk]
-        }
         url = reverse('movement_detail', kwargs={'pk': wallball.pk})
-        response = self.client.delete(url, data, format='json')
+        response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(Movement.objects.count(), initial_movements - 1)
 
@@ -737,16 +709,214 @@ class MovementTest(APITestCase):
         self.client.login(username='ordinary_user', password='ordinary_password')
         initial_movements = Movement.objects.count()
         wallball = Movement.objects.get(name='wallball')
-        rep = MovementSettings.objects.get(name=MovementSettings.REPETITIONS)
-        weight = MovementSettings.objects.get(name=MovementSettings.WEIGHT)
-        data = {
-            "id": wallball.pk,
-            "name": "heavy wallball",
-            "founder": wallball.founder.pk,
-            "equipment": wallball.equipment.pk,
-            "settings": [rep.pk, weight.pk]
-        }
         url = reverse('movement_detail', kwargs={'pk': wallball.pk})
-        response = self.client.delete(url, data, format='json')
+        response = self.client.delete(url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(Movement.objects.count(), initial_movements)
+
+class ExerciseTest(APITestCase):
+    """
+    This class will test all the interactions we can have with
+    Exercise views. What will be tested:
+        -> Not Connected:
+            FAIL:
+                -> Get all exercises
+                -> Get one specific exercise
+        -> With admin account:
+            SUCCESS:
+                -> Get all exercises
+                -> Get one specific exercise
+                -> Create a new exercise without associated movement
+                -> Delete a exercise
+                -> Modify a exercise
+            FAIL:
+                -> Create a new exercise with movements associated
+        -> With non admin account:
+            SUCCESS:
+                -> Get the exercises only with is_default == True or if founder == request.user
+                -> Get one specific exercises only if is_default == True or if founder == request.user
+                -> Create a new exercises
+                -> Delete a exercise only if founder == request.user
+                -> Modify a exercise
+    """
+    @classmethod
+    def setUpTestData(cls):
+        """
+        Create a database for test with TestDatabase helper
+        """
+        TestDatabase.create()
+
+    def test_not_connected_get_all_exercises(self):
+        """
+        Test if, we are not authenticated, the API returns a 403 status on this request
+        Not allowed to get all movements
+        """
+        url = reverse('exercises_list')
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+    
+    def test_not_connected_get_one_exercise(self):
+        """
+        Test if, we are not authenticated, the API returns a 403 status on this request
+        not allowed to get one movement
+        """
+        connie = Exercise.objects.get(name="connie")
+        url = reverse('exercise_detail', kwargs={'pk': connie.pk})
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_admin_get_all_exercises(self):
+        """
+        Test if, when we are logged with an admin account, the API returns:
+            - a 200 status on this request
+            - all the exercises
+        """
+        self.client.login(username='admin_user', password='admin_password')
+        exercises = Exercise.objects.count()
+        url = reverse('exercises_list')
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), exercises)
+    
+    def test_admin_get_one_exercise(self):
+        """
+        Test if, when we are logged with an admin account, the API returns:
+            - a 200 status on this request
+            - get the adequate exercise
+        """
+        self.client.login(username='admin_user', password='admin_password')
+        connie = Exercise.objects.get(name='connie')
+        url = reverse('exercise_detail', kwargs={'pk': connie.pk})
+        response = self.client.get(url, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        exercise_response = {
+            'id': connie.pk,
+            'name': connie.name,
+            'description': connie.description,
+            'exercise_type': connie.exercise_type,
+            'goal_type': connie.goal_type,
+            'goal_value': connie.goal_value,
+            'founder': connie.founder.pk,
+            'is_default': False,
+            "movements": [],
+        }
+
+        for movement in connie.movements.all():
+            mvt_per_exo = MovementsPerExercise.objects.filter(exercise=connie,
+                                                            movement=movement)
+            for mvt in mvt_per_exo:
+                movement_dict = {
+                    "id": mvt.pk ,
+                    "movement": movement.pk,
+                    "movement_number": mvt.movement_number,
+                    "movement_settings": []
+                }
+                for setting in mvt.movement_settings.all():
+                    set_per_mvt = MovementSettingsPerMovementsPerExercise.objects.get(exercise_movement=mvt,
+                                                                                      setting=setting)
+                    
+                    setting_dict = {
+                        "id": set_per_mvt.pk,
+                        "setting": setting.pk,
+                        "setting_value": set_per_mvt.setting_value
+                    }
+                    movement_dict['movement_settings'].append(setting_dict)
+            exercise_response['movements'].append(movement_dict)
+
+        self.assertCountEqual(response.data, exercise_response)
+
+
+    def test_admin_create_one_exercise(self):
+        """
+        Test if, when we are logged with an admin account, the API creates correctly
+        an exercise without pushing movements
+        """
+        self.client.login(username='admin_user', password='admin_password')
+        founder = User.objects.get(username='admin_user')
+        initial_exercises = Exercise.objects.count()
+        url = reverse('exercises_list')
+
+        data = {
+            'name': "fran",
+            'description': "hard workout based on 21-15-9 sequence",
+            'exercise_type': "FORTIME",
+            'goal_type': "round",
+            'goal_value': 3,
+            'founder': founder.pk,
+            'is_default': True,
+        }
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Exercise.objects.count(), initial_exercises + 1)
+
+    def test_admin_update_one_exercise(self):
+        """
+        Test if, when we are logged with an admin account, the API updates the exercise
+        with the adequate information. Moreover, it is not possible to update movements linked to
+        an exercise
+        """
+        self.client.login(username='admin_user', password='admin_password')
+        connie = Exercise.objects.get(name='connie')
+
+        url = reverse('exercise_detail', kwargs={'pk': connie.pk})
+        data = {
+            'name': connie.pk,
+            'description': connie.description,
+            'exercise_type': "FORTIME",
+            'goal_type': "round",
+            'goal_value': 5,
+            'founder': connie.founder.pk,
+            'is_default': True,
+        }
+        
+        
+        response_expected = {
+            'id': connie.pk,
+            'name': connie.name,
+            'description': connie.description,
+            'exercise_type': connie.exercise_type,
+            'goal_type': connie.goal_type,
+            'goal_value': 5,
+            'founder': connie.founder.pk,
+            'is_default': False,
+            "movements": [],
+        }
+
+        for movement in connie.movements.all():
+            mvt_per_exo = MovementsPerExercise.objects.filter(exercise=connie,
+                                                            movement=movement)
+            for mvt in mvt_per_exo:
+                movement_dict = {
+                    "id": mvt.pk ,
+                    "movement": movement.pk,
+                    "movement_number": mvt.movement_number,
+                    "movement_settings": []
+                }
+                for setting in mvt.movement_settings.all():
+                    set_per_mvt = MovementSettingsPerMovementsPerExercise.objects.get(exercise_movement=mvt,
+                                                                                      setting=setting)
+                    
+                    setting_dict = {
+                        "id": set_per_mvt.pk,
+                        "setting": setting.pk,
+                        "setting_value": set_per_mvt.setting_value
+                    }
+                    movement_dict['movement_settings'].append(setting_dict)
+            response_expected['movements'].append(movement_dict)
+        
+        response = self.client.put(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertCountEqual(response.data, response_expected)
+
+    def test_admin_delete_one_movement(self):
+        """
+        Test if, when we are logged with an admin account, the API deletes correctly the exercise
+        """
+        self.client.login(username='admin_user', password='admin_password')
+        initial_exercises = Exercise.objects.count()
+        connie = Exercise.objects.get(name='connie')
+        url = reverse('exercise_detail', kwargs={'pk': connie.pk})
+        response = self.client.delete(url)
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(Exercise.objects.count(), initial_exercises - 1)

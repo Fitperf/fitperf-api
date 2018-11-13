@@ -101,7 +101,8 @@ class MovementsPerExercise(models.Model):
     exercise = models.ForeignKey('Exercise',
                                  on_delete=models.CASCADE)
     movement = models.ForeignKey('Movement',
-                                 on_delete=models.CASCADE)
+                                 on_delete=models.CASCADE,
+                                 related_name="movement_per_exercise")
 
     movement_number = models.IntegerField()
 

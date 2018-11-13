@@ -10,5 +10,5 @@ urlpatterns = [
     path('movement-settings/', MovementSettingsList.as_view(), name='movement_settings_list'),
     path('movement-settings/<int:pk>/', MovementSettingsDetail.as_view(), name='movement_setting_detail'),
     path('exercises/', ExerciseList.as_view(), name="exercises_list"),
-    path('exercises/<int:pk>', ExerciseDetail.as_view(), name="exercise_detail"),
+    path('exercises/<int:pk>/', ExerciseDetail.as_view(), name="exercise_detail"),
 ]
