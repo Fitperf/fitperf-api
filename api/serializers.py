@@ -38,7 +38,7 @@ class MovementsPerExerciseSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = MovementsPerExercise
-        fields = ('id', 'movement', 'movement_number', 'movement_settings')
+        fields = ('id', 'exercise', 'movement', 'movement_number', 'movement_settings')
 
     def get_movement_settings(self, obj):
         "obj is a movement setting instance and returns a list of dict"

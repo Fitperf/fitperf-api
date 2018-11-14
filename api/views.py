@@ -2,8 +2,8 @@ from rest_framework import generics, permissions
 
 from django.db.models import Q
 from django.contrib.auth.models import User
-from .models import Equipment, Movement, MovementSettings, Exercise
-from .serializers import EquipmentSerializer, MovementSerializer, MovementSettingsSerializer, ExerciseSerializer
+from .models import Equipment, Movement, MovementSettings, Exercise, MovementsPerExercise
+from .serializers import EquipmentSerializer, MovementSerializer, MovementSettingsSerializer, ExerciseSerializer, MovementsPerExerciseSerializer
 from .permissions import IsAdminOrReadOnly, IsExerciseDefaultOrIsAdminOrFounder, IsFounderOrReadOnly, IsAdminOrFounderOrReadOnly
 
 class EquipmentList(generics.ListCreateAPIView):
@@ -49,3 +49,8 @@ class ExerciseDetail(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (permissions.IsAuthenticated, IsExerciseDefaultOrIsAdminOrFounder)
     queryset = Exercise.objects.all()
     serializer_class = ExerciseSerializer
+
+class MovementsPerExerciseList(generics.ListCreateAPIView):
+    permission_classes = (permissions.IsAuthenticated,)
+    queryset = MovementsPerExercise.objects.all()
+    serializer_class = MovementsPerExerciseSerializer
