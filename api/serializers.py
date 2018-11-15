@@ -42,13 +42,8 @@ class MovementsPerExerciseSerializer(serializers.ModelSerializer):
         model = MovementsPerExercise
         fields = ('id', 'movement', 'movement_number', 'movement_settings')
 
-    def get_movement_settings(self, obj):
-        "obj is a movement setting instance and returns a list of dict"
-        qset = MovementSettingsPerMovementsPerExercise.objects.filter(exercise_movement=obj)
-        return [MovementSettingsPerMovementsPerExerciseSerializer(exercise_movement).data for exercise_movement in qset]
-
 class ExerciseSerializer(serializers.ModelSerializer):
-    movements = MovementsPerExerciseSerializer(source='exercise_with_movements', many=True)
+    movements = MovementsPerExerciseSerializer(source='exercise_with_movements', many=True, required=False)
 
     class Meta:
         model = Exercise
@@ -79,6 +74,7 @@ class ExerciseSerializer(serializers.ModelSerializer):
         return exercise
 
     def update(self, instance, validated_data):
+
         instance.name = validated_data.get('name', instance.name)
         instance.description = validated_data.get('description', instance.description)
         instance.exercise_type = validated_data.get('exercise_type', instance.exercise_type)
@@ -86,15 +82,29 @@ class ExerciseSerializer(serializers.ModelSerializer):
         instance.goal_value = validated_data.get('goal_value', instance.goal_value)
         instance.founder = validated_data.get('founder', instance.founder)
         instance.is_default = validated_data.get('is_default', instance.is_default)
-        
-        for movement in validated_data["exercise_with_movements"]:
-            pass
-            # instance.movement = validated_data.get(movement['movement'], instance.movement)
-            # instance.movement_number = validated_data.get(movement['movement_number'], instance.movement_number)
-
-            # for setting in validated_data["movement_linked_to_exercise"]:
-            #     instance = MovementSettings.objects.get(pk=setting.pk)
-            #     instance.setting = validated_data.get(setting['setting'], instance.setting)
-            #     instance.setting_value = validated_data.get(setting['setting_value'], instance.setting_value)
         instance.save()
+        
+        if "exercise_with_movements" in validated_data:
+            movements_data = validated_data.pop("exercise_with_movements")
+            movements_instance = (instance.exercise_with_movements).all()
+            movements = list(movements_instance)
+
+            for i, movement_data in enumerate(movements_data):
+                movement = movements.pop(0)
+                movement.movement = movement_data.get('movement', movement.movement)
+                movement.movement_number = movement_data.get('movement_number', movement.movement_number)
+                movement.save()
+
+                if "movement_linked_to_exercise" in movement_data:
+                    settings_data = movement_data.pop("movement_linked_to_exercise")
+                    # Need index because movements_instance is a Queryset with several objects
+                    settings_instance = (movements_instance[i].movement_linked_to_exercise).all()
+                    settings = list(settings_instance)
+                    
+                    for setting_data in settings_data:
+                        setting = settings.pop(0)
+                        setting.setting = setting_data.get('setting', setting.setting)
+                        setting.setting_value = setting_data.get('setting_value', setting.setting_value)
+                        setting.save()
+
         return instance

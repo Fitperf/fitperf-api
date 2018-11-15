@@ -170,6 +170,7 @@ class ExerciseTest(APITestCase):
             'goal_value': 5,
             'founder': connie.founder.pk,
             'is_default': True,
+            'movements': []
         }
         
         
@@ -623,7 +624,6 @@ class ExerciseTest(APITestCase):
             response_expected['movements'].append(movement_dict)
         
         response = self.client.put(url, data, format='json')
-        print(response.data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertCountEqual(response.data, response_expected)
 
