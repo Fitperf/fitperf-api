@@ -73,6 +73,7 @@ class ExerciseSerializer(serializers.ModelSerializer):
                                                                                             setting_value=setting['setting_value'])
         return exercise
 
+    @transaction.atomic
     def update(self, instance, validated_data):
 
         instance.name = validated_data.get('name', instance.name)
@@ -88,7 +89,6 @@ class ExerciseSerializer(serializers.ModelSerializer):
             movements_data = validated_data.pop("exercise_with_movements")
             movements_instance = (instance.exercise_with_movements).all()
             movements = list(movements_instance)
-
             for i, movement_data in enumerate(movements_data):
                 movement = movements.pop(0)
                 movement.movement = movement_data.get('movement', movement.movement)
@@ -106,5 +106,4 @@ class ExerciseSerializer(serializers.ModelSerializer):
                         setting.setting = setting_data.get('setting', setting.setting)
                         setting.setting_value = setting_data.get('setting_value', setting.setting_value)
                         setting.save()
-
         return instance

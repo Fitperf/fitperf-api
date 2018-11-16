@@ -152,7 +152,7 @@ class ExerciseTest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Exercise.objects.count(), initial_exercises + 1)
 
-    def test_admin_update_one_exercise(self):
+    def test_admin_update_one_exercise_on_main_info(self):
         """
         Test if, when we are logged with an admin account, the API updates the exercise
         with the adequate information. Moreover, it is not possible to update movements linked to
@@ -170,7 +170,6 @@ class ExerciseTest(APITestCase):
             'goal_value': 5,
             'founder': connie.founder.pk,
             'is_default': True,
-            'movements': []
         }
         
         
@@ -206,11 +205,61 @@ class ExerciseTest(APITestCase):
                         "setting_value": set_per_mvt.setting_value
                     }
                     movement_dict['movement_settings'].append(setting_dict)
-            response_expected['movements'].append(movement_dict)
+                response_expected['movements'].append(movement_dict)
         
         response = self.client.put(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertCountEqual(response.data, response_expected)
+
+    # def test_admin_update_one_exercise_on_movement(self):
+    #     """
+    #     Test if, when we are logged with an admin account, the API updates the exercise
+    #     with the adequate information. Moreover, it is not possible to update movements linked to
+    #     an exercise
+    #     """
+    #     self.client.login(username='admin_user', password='admin_password')
+    #     connie = Exercise.objects.get(name='connie')
+
+    #     url = reverse('exercise_detail', kwargs={'pk': connie.pk})
+    #     data = {
+    #         'name': connie.pk,
+    #         'description': connie.description,
+    #         'exercise_type': "FORTIME",
+    #         'goal_type': "round",
+    #         'goal_value': 5,
+    #         'founder': connie.founder.pk,
+    #         'is_default': True,
+    #         'movements': []
+    #     }
+    #     for index_mvt, movement in enumerate(connie.movements.all()):
+    #         mvt_per_exo = MovementsPerExercise.objects.filter(exercise=connie,
+    #                                                         movement=movement)
+    #         for mvt in mvt_per_exo:
+    #             movement_dict = {
+    #                 "id": mvt.pk ,
+    #                 "movement": movement.pk,
+    #                 "movement_number": mvt.movement_number,
+    #                 "movement_settings": []
+    #             }
+
+    #             if index_mvt == 0:
+    #                 movement_dict["movement_number"] = mvt.movement_number
+
+    #             for setting in mvt.movement_settings.all():
+    #                 set_per_mvt = MovementSettingsPerMovementsPerExercise.objects.get(exercise_movement=mvt,
+    #                                                                                   setting=setting)
+                    
+    #                 setting_dict = {
+    #                     "id": set_per_mvt.pk,
+    #                     "setting": setting.pk,
+    #                     "setting_value": set_per_mvt.setting_value
+    #                 }
+    #                 movement_dict['movement_settings'].append(setting_dict)
+    #             data['movements'].append(movement_dict)
+    #     response = self.client.put(url, data, format='json')
+    #     self.assertEqual(response.status_code, status.HTTP_200_OK)
+    #     self.assertCountEqual(response.data, data)
+
 
     def test_admin_delete_one_exercise(self):
         """
