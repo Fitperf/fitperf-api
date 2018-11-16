@@ -2,7 +2,7 @@ from rest_framework import serializers
 
 from django.db import transaction
 from django.contrib.auth.models import User
-from .models import Equipment, Movement, MovementSettings, Exercise, MovementsPerExercise, MovementSettingsPerMovementsPerExercise
+from .models import Equipment, Movement, MovementSettings, Exercise, MovementsPerExercise, MovementSettingsPerMovementsPerExercise, Training
 
 class EquipmentSerializer(serializers.ModelSerializer):
 
@@ -107,3 +107,10 @@ class ExerciseSerializer(serializers.ModelSerializer):
                         setting.setting_value = setting_data.get('setting_value', setting.setting_value)
                         setting.save()
         return instance
+
+class TrainingSerializer(serializers.ModelSerializer):
+    exercise = ExerciseSerializer(read_only=True)
+
+    class Meta:
+        model = Training
+        fields = ('id', 'founder', 'date', 'performance_type', 'performance_value', 'done', 'exercise')

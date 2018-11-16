@@ -2,9 +2,9 @@ from rest_framework import generics, permissions
 
 from django.db.models import Q
 from django.contrib.auth.models import User
-from .models import Equipment, Movement, MovementSettings, Exercise, MovementsPerExercise
-from .serializers import EquipmentSerializer, MovementSerializer, MovementSettingsSerializer, ExerciseSerializer, MovementsPerExerciseSerializer
-from .permissions import IsAdminOrReadOnly, IsExerciseDefaultOrIsAdminOrFounder, IsFounderOrReadOnly, IsAdminOrFounderOrReadOnly
+from .models import Equipment, Movement, MovementSettings, Exercise, MovementsPerExercise, Training
+from .serializers import EquipmentSerializer, MovementSerializer, MovementSettingsSerializer, ExerciseSerializer, MovementsPerExerciseSerializer, TrainingSerializer
+from .permissions import IsAdminOrReadOnly, IsExerciseDefaultOrIsAdminOrFounder, IsFounderOrReadOnly, IsAdminOrFounderOrReadOnly, IsAdminOrFounder
 
 class EquipmentList(generics.ListCreateAPIView):
     permission_classes = (permissions.IsAuthenticated, IsAdminOrReadOnly,)
@@ -49,6 +49,20 @@ class ExerciseDetail(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (permissions.IsAuthenticated, IsExerciseDefaultOrIsAdminOrFounder)
     queryset = Exercise.objects.all()
     serializer_class = ExerciseSerializer
+
+class TrainingList(generics.ListCreateAPIView):
+    permission_classes = (permissions.IsAuthenticated, IsAdminOrFounder)
+    serializer_class = TrainingSerializer
+
+    def get_queryset(self):
+        if self.request.user.is_staff:
+            return Training.objects.all()
+        return Training.objects.filter(founder=self.request.user)
+
+class TrainingDetail(generics.RetrieveUpdateDestroyAPIView):
+    permission_classes = (permissions.IsAuthenticated, IsAdminOrFounder)
+    queryset = Training.objects.all()
+    serializer_class = TrainingSerializer
 
 class MovementsPerExerciseList(generics.ListCreateAPIView):
     permission_classes = (permissions.IsAuthenticated,)
