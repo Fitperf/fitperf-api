@@ -3,7 +3,7 @@ from rest_framework import generics, permissions
 from django.db.models import Q
 from django.contrib.auth.models import User
 from .models import Equipment, Movement, MovementSettings, Exercise, MovementsPerExercise, Training
-from .serializers import EquipmentSerializer, MovementSerializer, MovementSettingsSerializer, ExerciseSerializer, MovementsPerExerciseSerializer, TrainingSerializer
+from .serializers import EquipmentSerializer, MovementSerializer, MovementSettingsSerializer, ExerciseSerializer, TrainingSerializer
 from .permissions import IsAdminOrReadOnly, IsExerciseDefaultOrIsAdminOrFounder, IsFounderOrReadOnly, IsAdminOrFounderOrReadOnly, IsAdminOrFounder
 
 class EquipmentList(generics.ListCreateAPIView):

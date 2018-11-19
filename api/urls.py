@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import EquipmentList, EquipmentDetail, MovementList, MovementDetail, MovementSettingsList, MovementSettingsDetail, ExerciseList, ExerciseDetail, MovementsPerExerciseList, TrainingList, TrainingDetail
+from .views import EquipmentList, EquipmentDetail, MovementList, MovementDetail, MovementSettingsList, MovementSettingsDetail, ExerciseList, ExerciseDetail, TrainingList, TrainingDetail
 
 urlpatterns = [
     path('equipments/', EquipmentList.as_view(), name='equipments_list'),
