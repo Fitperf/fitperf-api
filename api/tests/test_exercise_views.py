@@ -27,7 +27,7 @@ class ExerciseTest(APITestCase):
         -> With non admin account:
             SUCCESS:
                 -> Get the exercises only with is_default == True or if founder == request.user
-                -> Get one specific exercises only if is_default == True or if founder == request.user
+                -> Get one specific exercise only if is_default == True or if founder == request.user
                 -> Create a new exercise without associated movement
                 -> Create a new exercise with movements associated 
                         (associated movements won't be registered)
@@ -37,7 +37,6 @@ class ExerciseTest(APITestCase):
                 -> Get one exercise if is_default == False xor if founder != request.user
                 -> Delete an exercise only if founder != request.user
                 -> Modify an exercise only if founder != request.user
-
     """
     @classmethod
     def setUpTestData(cls):
@@ -49,7 +48,7 @@ class ExerciseTest(APITestCase):
     def test_not_connected_get_all_exercises(self):
         """
         Test if, we are not authenticated, the API returns a 403 status on this request
-        Not allowed to get all movements
+        Not allowed to get all exercises
         """
         url = reverse('exercises_list')
         response = self.client.get(url, format='json')
@@ -58,7 +57,7 @@ class ExerciseTest(APITestCase):
     def test_not_connected_get_one_exercise(self):
         """
         Test if, we are not authenticated, the API returns a 403 status on this request
-        not allowed to get one movement
+        not allowed to get one exercise
         """
         connie = Exercise.objects.get(name="connie")
         url = reverse('exercise_detail', kwargs={'pk': connie.pk})
@@ -349,7 +348,7 @@ class ExerciseTest(APITestCase):
         self.assertEqual(Exercise.objects.count(), initial_exercises + 1)
         self.assertEqual(response.data, response_expected)
 
-    def test_non_admin_get_all_exercises(self):
+    def test_non_admin_get_filtered_exercises(self):
         """
         Test if, when we are logged with a non admin account, the API returns:
             - a 200 status on this request
@@ -466,7 +465,7 @@ class ExerciseTest(APITestCase):
         """
         Test if, when we are logged with an admin account, the API returns:
             - a 403 FORBIDDEN status on this request because the user is not allowed to
-                request an exercise wich is not by default and where he is not
+                request an exercise which is not by default and where he is not
                 the founder
         """
         self.client.login(username='ordinary_user', password='ordinary_password')

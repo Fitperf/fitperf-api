@@ -1,5 +1,5 @@
-from rest_framework import serializers
-
+from django.db.models import Q
+from rest_framework import serializers, exceptions
 from django.db import transaction
 from django.contrib.auth.models import User
 from .models import Equipment, Movement, MovementSettings, Exercise, MovementsPerExercise, MovementSettingsPerMovementsPerExercise, Training
@@ -109,8 +109,50 @@ class ExerciseSerializer(serializers.ModelSerializer):
         return instance
 
 class TrainingSerializer(serializers.ModelSerializer):
-    exercise = ExerciseSerializer(read_only=True)
+    exercise = ExerciseSerializer()
 
     class Meta:
         model = Training
         fields = ('id', 'founder', 'date', 'performance_type', 'performance_value', 'done', 'exercise')
+
+    def create(self, validated_data):
+
+        # Check if exercise exists
+        try:
+            founder = User.objects.get(pk=validated_data['exercise']['founder'].pk)
+            exercise = Exercise.objects.get(Q(name=validated_data['exercise']['name']), founder=founder)
+        except ValueError:
+            raise exceptions.ValidationError({
+                'exercise': 'This exercise does not exist'
+            })
+
+        if exercise:
+            training = Training.objects.create(exercise=exercise,
+                                                founder=validated_data['founder'],
+                                                date=validated_data['date'],
+                                                performance_type=validated_data['performance_type'])
+            if validated_data["performance_value"]:
+                training.performance_value = validated_data["performance_value"]
+                training.save()
+        return training
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        """
+        The update is only possible on trainings fields and not on nested elements
+        """
+        instance.date = validated_data.get('date', instance.date)
+        instance.founder = validated_data.get('founder', instance.founder)
+        instance.performance_type = validated_data.get('performance_type', instance.performance_type)
+        instance.performance_value = validated_data.get('performance_value', instance.performance_value)
+        instance.done = validated_data.get('done', instance.done)
+        instance.save()
+
+        return instance
+
+# class TrainingSerializer(serializers.ModelSerializer):
+#     exercise = ExerciseSerializer(read_only=True)
+
+#     class Meta:
+#         model = Training
+#         fields = ('id', 'founder', 'date', 'performance_type', 'performance_value', 'done', 'exercise')
