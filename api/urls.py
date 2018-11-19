@@ -13,5 +13,4 @@ urlpatterns = [
     path('exercises/<int:pk>/', ExerciseDetail.as_view(), name="exercise_detail"),
     path('trainings/', TrainingList.as_view(), name="trainings_list"),
     path('trainings/<int:pk>/', TrainingDetail.as_view(), name="training_detail"),
-    path('movements-per-exercise/', MovementsPerExerciseList.as_view(), name="mvts_per_exercise_list"),
 ]

@@ -63,8 +63,3 @@ class TrainingDetail(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (permissions.IsAuthenticated, IsAdminOrFounder)
     queryset = Training.objects.all()
     serializer_class = TrainingSerializer
-
-class MovementsPerExerciseList(generics.ListCreateAPIView):
-    permission_classes = (permissions.IsAuthenticated,)
-    queryset = MovementsPerExercise.objects.all()
-    serializer_class = MovementsPerExerciseSerializer

@@ -149,10 +149,3 @@ class TrainingSerializer(serializers.ModelSerializer):
         instance.save()
 
         return instance
-
-# class TrainingSerializer(serializers.ModelSerializer):
-#     exercise = ExerciseSerializer(read_only=True)
-
-#     class Meta:
-#         model = Training
-#         fields = ('id', 'founder', 'date', 'performance_type', 'performance_value', 'done', 'exercise')
