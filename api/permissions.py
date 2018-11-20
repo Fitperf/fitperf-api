@@ -36,6 +36,12 @@ class IsAdminOrReadOnly(permissions.BasePermission):
         # Write permissions are only allowed to admin users
         return request.user.is_staff == True
 
+class IsAdminOrFounder(permissions.BasePermission):
+
+    def has_object_permission(self, request, view, obj):
+        # Has all permissions only for admin or founder
+        return obj.founder == request.user or request.user.is_staff
+
 class IsAdminOrFounderOrReadOnly(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):

@@ -27,7 +27,7 @@ class ExerciseTest(APITestCase):
         -> With non admin account:
             SUCCESS:
                 -> Get the exercises only with is_default == True or if founder == request.user
-                -> Get one specific exercises only if is_default == True or if founder == request.user
+                -> Get one specific exercise only if is_default == True or if founder == request.user
                 -> Create a new exercise without associated movement
                 -> Create a new exercise with movements associated 
                         (associated movements won't be registered)
@@ -37,7 +37,6 @@ class ExerciseTest(APITestCase):
                 -> Get one exercise if is_default == False xor if founder != request.user
                 -> Delete an exercise only if founder != request.user
                 -> Modify an exercise only if founder != request.user
-
     """
     @classmethod
     def setUpTestData(cls):
@@ -49,7 +48,7 @@ class ExerciseTest(APITestCase):
     def test_not_connected_get_all_exercises(self):
         """
         Test if, we are not authenticated, the API returns a 403 status on this request
-        Not allowed to get all movements
+        Not allowed to get all exercises
         """
         url = reverse('exercises_list')
         response = self.client.get(url, format='json')
@@ -58,7 +57,7 @@ class ExerciseTest(APITestCase):
     def test_not_connected_get_one_exercise(self):
         """
         Test if, we are not authenticated, the API returns a 403 status on this request
-        not allowed to get one movement
+        not allowed to get one exercise
         """
         connie = Exercise.objects.get(name="connie")
         url = reverse('exercise_detail', kwargs={'pk': connie.pk})
@@ -130,7 +129,8 @@ class ExerciseTest(APITestCase):
     def test_admin_create_one_exercise(self):
         """
         Test if, when we are logged with an admin account, the API creates correctly
-        an exercise without pushing movements
+        an exercise pushing empty movements.
+        It is usefull for running exercise for example.
         """
         self.client.login(username='admin_user', password='admin_password')
         founder = User.objects.get(username='admin_user')
@@ -145,12 +145,13 @@ class ExerciseTest(APITestCase):
             'goal_value': 3,
             'founder': founder.pk,
             'is_default': True,
+            'movements': []
         }
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Exercise.objects.count(), initial_exercises + 1)
 
-    def test_admin_update_one_exercise(self):
+    def test_admin_update_one_exercise_on_main_info(self):
         """
         Test if, when we are logged with an admin account, the API updates the exercise
         with the adequate information. Moreover, it is not possible to update movements linked to
@@ -203,11 +204,61 @@ class ExerciseTest(APITestCase):
                         "setting_value": set_per_mvt.setting_value
                     }
                     movement_dict['movement_settings'].append(setting_dict)
-            response_expected['movements'].append(movement_dict)
+                response_expected['movements'].append(movement_dict)
         
         response = self.client.put(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertCountEqual(response.data, response_expected)
+
+    # def test_admin_update_one_exercise_on_movement(self):
+    #     """
+    #     Test if, when we are logged with an admin account, the API updates the exercise
+    #     with the adequate information. Moreover, it is not possible to update movements linked to
+    #     an exercise
+    #     """
+    #     self.client.login(username='admin_user', password='admin_password')
+    #     connie = Exercise.objects.get(name='connie')
+
+    #     url = reverse('exercise_detail', kwargs={'pk': connie.pk})
+    #     data = {
+    #         'name': connie.pk,
+    #         'description': connie.description,
+    #         'exercise_type': "FORTIME",
+    #         'goal_type': "round",
+    #         'goal_value': 5,
+    #         'founder': connie.founder.pk,
+    #         'is_default': True,
+    #         'movements': []
+    #     }
+    #     for index_mvt, movement in enumerate(connie.movements.all()):
+    #         mvt_per_exo = MovementsPerExercise.objects.filter(exercise=connie,
+    #                                                         movement=movement)
+    #         for mvt in mvt_per_exo:
+    #             movement_dict = {
+    #                 "id": mvt.pk ,
+    #                 "movement": movement.pk,
+    #                 "movement_number": mvt.movement_number,
+    #                 "movement_settings": []
+    #             }
+
+    #             if index_mvt == 0:
+    #                 movement_dict["movement_number"] = mvt.movement_number
+
+    #             for setting in mvt.movement_settings.all():
+    #                 set_per_mvt = MovementSettingsPerMovementsPerExercise.objects.get(exercise_movement=mvt,
+    #                                                                                   setting=setting)
+                    
+    #                 setting_dict = {
+    #                     "id": set_per_mvt.pk,
+    #                     "setting": setting.pk,
+    #                     "setting_value": set_per_mvt.setting_value
+    #                 }
+    #                 movement_dict['movement_settings'].append(setting_dict)
+    #             data['movements'].append(movement_dict)
+    #     response = self.client.put(url, data, format='json')
+    #     self.assertEqual(response.status_code, status.HTTP_200_OK)
+    #     self.assertCountEqual(response.data, data)
+
 
     def test_admin_delete_one_exercise(self):
         """
@@ -224,8 +275,9 @@ class ExerciseTest(APITestCase):
     def test_admin_create_one_exercise_with_movements(self):
         """
         Test if, when we are logged with an admin account, the API creates
-        the exercise when we integrate movements associated info but without
-        the movements because movements are only on readonly status on this serializer
+        the exercise when we integrate movements associated.
+        Even if there are not movement_settings, it is necessary to push movement_settings
+        attribute associated to an empty list
         """
 
         self.client.login(username='admin_user', password='admin_password')
@@ -270,11 +322,33 @@ class ExerciseTest(APITestCase):
             'is_default': fran.is_default,
             "movements": []
         }
+        for movement in fran.movements.all():
+            mvt_per_exo = MovementsPerExercise.objects.filter(exercise=fran,
+                                                            movement=movement)
+            for mvt in mvt_per_exo:
+                movement_dict = {
+                    "id": mvt.pk ,
+                    "movement": movement.pk,
+                    "movement_number": mvt.movement_number,
+                    "movement_settings": []
+                }
+                for setting in mvt.movement_settings.all():
+                    set_per_mvt = MovementSettingsPerMovementsPerExercise.objects.get(exercise_movement=mvt,
+                                                                                      setting=setting)
+                    
+                    setting_dict = {
+                        "id": set_per_mvt.pk,
+                        "setting": setting.pk,
+                        "setting_value": set_per_mvt.setting_value
+                    }
+                    movement_dict['movement_settings'].append(setting_dict)
+            response_expected['movements'].append(movement_dict)
+
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Exercise.objects.count(), initial_exercises + 1)
         self.assertEqual(response.data, response_expected)
 
-    def test_non_admin_get_all_exercises(self):
+    def test_non_admin_get_filtered_exercises(self):
         """
         Test if, when we are logged with a non admin account, the API returns:
             - a 200 status on this request
@@ -391,7 +465,7 @@ class ExerciseTest(APITestCase):
         """
         Test if, when we are logged with an admin account, the API returns:
             - a 403 FORBIDDEN status on this request because the user is not allowed to
-                request an exercise wich is not by default and where he is not
+                request an exercise which is not by default and where he is not
                 the founder
         """
         self.client.login(username='ordinary_user', password='ordinary_password')
@@ -403,7 +477,8 @@ class ExerciseTest(APITestCase):
     def test_non_admin_create_one_exercise(self):
         """
         Test if, when we are logged with a non admin account, the API creates correctly
-        an exercise without pushing movements
+        an exercise pushing empty movements.
+        It is usefull for running exercise for example.
         """
         self.client.login(username='ordinary_user', password='ordinary_password')
         founder = User.objects.get(username='ordinary_user')
@@ -418,6 +493,7 @@ class ExerciseTest(APITestCase):
             'goal_value': 3,
             'founder': founder.pk,
             'is_default': True,
+            'movements': []
         }
         response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -426,8 +502,9 @@ class ExerciseTest(APITestCase):
     def test_non_admin_create_one_exercise_with_movements(self):
         """
         Test if, when we are logged with a non admin account, the API creates
-        the exercise when we integrate movements associated info but without
-        the movements because movements are only on readonly status on this serializer
+        the exercise when we integrate movements associated.
+        Even if there are not movement_settings, it is necessary to push movement_settings
+        attribute associated to an empty list
         """
 
         self.client.login(username='ordinary_user', password='ordinary_password')
@@ -472,6 +549,28 @@ class ExerciseTest(APITestCase):
             'is_default': fran.is_default,
             "movements": []
         }
+        for movement in fran.movements.all():
+            mvt_per_exo = MovementsPerExercise.objects.filter(exercise=fran,
+                                                            movement=movement)
+            for mvt in mvt_per_exo:
+                movement_dict = {
+                    "id": mvt.pk ,
+                    "movement": movement.pk,
+                    "movement_number": mvt.movement_number,
+                    "movement_settings": []
+                }
+                for setting in mvt.movement_settings.all():
+                    set_per_mvt = MovementSettingsPerMovementsPerExercise.objects.get(exercise_movement=mvt,
+                                                                                      setting=setting)
+                    
+                    setting_dict = {
+                        "id": set_per_mvt.pk,
+                        "setting": setting.pk,
+                        "setting_value": set_per_mvt.setting_value
+                    }
+                    movement_dict['movement_settings'].append(setting_dict)
+            response_expected['movements'].append(movement_dict)
+            
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(Exercise.objects.count(), initial_exercises + 1)
         self.assertEqual(response.data, response_expected)

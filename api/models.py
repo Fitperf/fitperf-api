@@ -99,7 +99,8 @@ class MovementsPerExercise(models.Model):
     where we add the setting value (number of repetitions, etc...)
     """
     exercise = models.ForeignKey('Exercise',
-                                 on_delete=models.CASCADE)
+                                 on_delete=models.CASCADE,
+                                 related_name="exercise_with_movements")
     movement = models.ForeignKey('Movement',
                                  on_delete=models.CASCADE,
                                  related_name="movement_per_exercise")
@@ -123,10 +124,12 @@ class MovementSettingsPerMovementsPerExercise(models.Model):
 
     exercise_movement = models.ForeignKey('MovementsPerExercise',
                                               on_delete=models.CASCADE,
-                                              verbose_name="the settings value for each movement per exercise")
+                                              verbose_name="the settings value for each movement per exercise",
+                                              related_name="movement_linked_to_exercise")
     setting = models.ForeignKey('MovementSettings',
                                 on_delete=models.CASCADE,
-                                verbose_name="the setting linked to the movement associated to the exercise")  
+                                verbose_name="the setting linked to the movement associated to the exercise",
+                                related_name="settings_per_movement_linked_to_exercise")  
     setting_value = models.IntegerField(default=0)
 
     def __str__(self):

@@ -37,9 +37,17 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
 
-    # 3rd-party
+    # 3rd-party@
     'rest_framework',
+    'rest_framework.authtoken',
+    'rest_framework_swagger',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'rest_auth',
+    'rest_auth.registration',
 
     # Local
     'api.apps.ApiConfig',
@@ -60,6 +68,10 @@ ROOT_URLCONF = 'fitperf_api.urls'
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_AUTHENTIFICATION_CLASSES': [
+        'rest_framework.authentification.SessionAuthentification',
+        'rest_framework.authentification.TokenAuthentification'
     ]
 }
 
@@ -134,3 +146,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.1/howto/static-files/
 
 STATIC_URL = '/static/'
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+SITE_ID = 1

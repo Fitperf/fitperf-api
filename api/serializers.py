@@ -1,7 +1,8 @@
-from rest_framework import serializers
-
+from django.db.models import Q
+from rest_framework import serializers, exceptions
+from django.db import transaction
 from django.contrib.auth.models import User
-from .models import Equipment, Movement, MovementSettings, Exercise, MovementsPerExercise, MovementSettingsPerMovementsPerExercise
+from .models import Equipment, Movement, MovementSettings, Exercise, MovementsPerExercise, MovementSettingsPerMovementsPerExercise, Training
 
 class EquipmentSerializer(serializers.ModelSerializer):
 
@@ -34,51 +35,117 @@ class MovementsPerExerciseSerializer(serializers.ModelSerializer):
     """
     Used as a nested serializer by Exercise Serializer
     """
-    movement_settings = serializers.SerializerMethodField()
+
+    movement_settings = MovementSettingsPerMovementsPerExerciseSerializer(source='movement_linked_to_exercise', many=True)
     
     class Meta:
         model = MovementsPerExercise
         fields = ('id', 'movement', 'movement_number', 'movement_settings')
 
-    def get_movement_settings(self, obj):
-        "obj is a movement setting instance and returns a list of dict"
-        qset = MovementSettingsPerMovementsPerExercise.objects.filter(exercise_movement=obj)
-        return [MovementSettingsPerMovementsPerExerciseSerializer(exercise_movement).data for exercise_movement in qset]
-
 class ExerciseSerializer(serializers.ModelSerializer):
-    movements = serializers.SerializerMethodField()
+    movements = MovementsPerExerciseSerializer(source='exercise_with_movements', many=True, required=False)
 
     class Meta:
         model = Exercise
         fields = ('id', 'name', 'description', 'exercise_type', 'goal_type', 'goal_value', 'founder', 'is_default', 'movements')
 
-    def get_movements(self, obj):
-        "obj is a Movement instance and returns a list of dict"
-        qset = MovementsPerExercise.objects.filter(exercise=obj)
-        return [MovementsPerExerciseSerializer(exercise).data for exercise in qset]
+    @transaction.atomic
+    def create(self, validated_data):    
+        exercise = Exercise.objects.create(name=validated_data["name"],
+                                            exercise_type=validated_data["exercise_type"],
+                                            description=validated_data["description"],
+                                            goal_type=validated_data["goal_type"],
+                                            goal_value=validated_data["goal_value"],
+                                            founder=validated_data["founder"])
+        if validated_data["founder"].is_superuser:
+            exercise.is_default = True
+            exercise.save()
 
-    # def create(self, validated_data):
+        for movement in validated_data["exercise_with_movements"]:
+            mvt = Movement.objects.get(pk=movement["movement"].pk)
+            mvt_associated = MovementsPerExercise.objects.create(exercise=exercise,
+                                                                movement=mvt,
+                                                                movement_number=movement["movement_number"])
+            for setting in movement["movement_linked_to_exercise"]:
+                setting_obj = MovementSettings.objects.get(pk=setting['setting'].pk)
+                setting_associated = MovementSettingsPerMovementsPerExercise.objects.create(exercise_movement=mvt_associated,
+                                                                                            setting=setting_obj,
+                                                                                            setting_value=setting['setting_value'])
+        return exercise
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+
+        instance.name = validated_data.get('name', instance.name)
+        instance.description = validated_data.get('description', instance.description)
+        instance.exercise_type = validated_data.get('exercise_type', instance.exercise_type)
+        instance.goal_type = validated_data.get('goal_type', instance.goal_type)
+        instance.goal_value = validated_data.get('goal_value', instance.goal_value)
+        instance.founder = validated_data.get('founder', instance.founder)
+        instance.is_default = validated_data.get('is_default', instance.is_default)
+        instance.save()
         
-    #     exercise = Exercise.objects.create(name=validated_data["name"],
-    #                                         exercise_type=validated_data["exercise_type"],
-    #                                         description=validated_data["description"],
-    #                                         goal_type=validated_data["goal_type"],
-    #                                         goal_value=validated_data["goal_value"],
-    #                                         founder=validated_data["founder"])
-    #     if validated_data["founder"].is_superuser:
-    #         exercise.is_default = True
-    #         exercise.save()
+        if "exercise_with_movements" in validated_data:
+            movements_data = validated_data.pop("exercise_with_movements")
+            movements_instance = (instance.exercise_with_movements).all()
+            movements = list(movements_instance)
+            for i, movement_data in enumerate(movements_data):
+                movement = movements.pop(0)
+                movement.movement = movement_data.get('movement', movement.movement)
+                movement.movement_number = movement_data.get('movement_number', movement.movement_number)
+                movement.save()
 
-    #     for movement in validated_data["movements"]:
-    #         mvt = Movement.objects.get(pk=movement["movement"])
-    #         mvt_associated = MovementsPerExercise.objects.create(exercise=exercise,
-    #                                                             movement=mvt,
-    #                                                             movement_number=movement["movement_number"])
-            # for setting in movement["movement_settings"]:
-            #     setting_obj = MovementSettings.objects.get(pk=setting['id'])
-            #     setting_associated = MovementSettingsPerMovementsPerExercise.objects.create(exercise_movement=mvt_associated,
-            #                                                                                 setting=setting_obj,
-                                                                                            # setting_value=setting['setting_value'])
+                if "movement_linked_to_exercise" in movement_data:
+                    settings_data = movement_data.pop("movement_linked_to_exercise")
+                    # Need index because movements_instance is a Queryset with several objects
+                    settings_instance = (movements_instance[i].movement_linked_to_exercise).all()
+                    settings = list(settings_instance)
+                    
+                    for setting_data in settings_data:
+                        setting = settings.pop(0)
+                        setting.setting = setting_data.get('setting', setting.setting)
+                        setting.setting_value = setting_data.get('setting_value', setting.setting_value)
+                        setting.save()
+        return instance
 
-        # return exercise
-            
+class TrainingSerializer(serializers.ModelSerializer):
+    exercise = ExerciseSerializer()
+
+    class Meta:
+        model = Training
+        fields = ('id', 'founder', 'date', 'performance_type', 'performance_value', 'done', 'exercise')
+
+    def create(self, validated_data):
+
+        # Check if exercise exists
+        try:
+            founder = User.objects.get(pk=validated_data['exercise']['founder'].pk)
+            exercise = Exercise.objects.get(Q(name=validated_data['exercise']['name']), founder=founder)
+        except ValueError:
+            raise exceptions.ValidationError({
+                'exercise': 'This exercise does not exist'
+            })
+
+        if exercise:
+            training = Training.objects.create(exercise=exercise,
+                                                founder=validated_data['founder'],
+                                                date=validated_data['date'],
+                                                performance_type=validated_data['performance_type'])
+            if validated_data["performance_value"]:
+                training.performance_value = validated_data["performance_value"]
+                training.save()
+        return training
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        """
+        The update is only possible on trainings fields and not on nested elements
+        """
+        instance.date = validated_data.get('date', instance.date)
+        instance.founder = validated_data.get('founder', instance.founder)
+        instance.performance_type = validated_data.get('performance_type', instance.performance_type)
+        instance.performance_value = validated_data.get('performance_value', instance.performance_value)
+        instance.done = validated_data.get('done', instance.done)
+        instance.save()
+
+        return instance
