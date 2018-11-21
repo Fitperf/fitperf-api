@@ -1,15 +1,37 @@
 version: "3"
 services:
-    postgres:
+    db:
         image: postgres:11.0
         container_name: fitperf-postgres
         ports:
-            - "15432:5432"
+            - "5432:5432"
         environment:
             - POSTGRES_USER=${DB_USER}
             - POSTGRES_PASSWORD=${DB_PASSWORD}
             - POSTGRES_DB=${DB_NAME}
         volumes:
             - fitperf-data:/var/lib/postgresql/data
+    web:
+        build: .
+        command: python /app/manage.py migrate --noinput
+        command: python /app/manage.py dbinit
+        command: python /app/manage.py runserver 0.0.0.0:8000
+        volumes:
+            - .:/app
+        ports:
+            - 8000:8000
+        environment:
+            - SECRET_KEY=${SECRET_KEY}
+            - DEBUG=${DEBUG}
+            - ALLOWED_HOSTS=${ALLOWED_HOSTS}
+            - DB_USER=${DB_USER}
+            - DB_PASSWORD=${DB_PASSWORD}
+            - DB_NAME=${DB_NAME}
+            - DJANGO_SUPERUSER_USERNAME=${DJANGO_SUPERUSER_USERNAME}
+            - DJANGO_SUPERUSER_EMAIL=${DJANGO_SUPERUSER_EMAIL}
+            - DJANGO_SUPERUSER_PASSWORD='${DJANGO_SUPERUSER_PASSWORD}
+        depends_on:
+            - db
+
 volumes:
     fitperf-data:
