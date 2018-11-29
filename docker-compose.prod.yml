@@ -31,13 +31,12 @@ services:
           dockerfile: Dockerfile-prod
         container_name: fitperf-api
         restart: always
-        command: bash -c "./manage.py migrate && ./manage.py dbinit && ./manage.py collectstatic --no-input && gunicorn --chdir fitperf_api --bind :8000 fitperf_api.wsgi:application"
         volumes:
             - .:/app/src
             - static_volume:/app/static
         environment:
             - SECRET_KEY=${SECRET_KEY}
-            - DEBUG=${DEBUG}
+            - DEBUG=0
             - ALLOWED_HOSTS=${ALLOWED_HOSTS}
             - DB_USER=${DB_USER}
             - DB_PASSWORD=${DB_PASSWORD}
@@ -50,6 +49,7 @@ services:
         networks:
             - nginx_network
             - database_network
+        command: bash -c "./manage.py migrate && ./manage.py dbinit && ./manage.py collectstatic --no-input && gunicorn --chdir fitperf_api --bind :8000 fitperf_api.wsgi:application"
 volumes:
     fitperf-data:
     static_volume:
