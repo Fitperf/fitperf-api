@@ -18,10 +18,6 @@ RUN pipenv install --deploy --system
 
 # copy our project code
 COPY . /app/src
-RUN python manage.py collectstatic --no-input
 
 # expose the port 8000
 EXPOSE 8000
-
-# define the default command to run when starting the container
-CMD ["gunicorn", "--chdir", "fitperf_api", "--bind", ":8000", "fitperf_api.wsgi:application"]

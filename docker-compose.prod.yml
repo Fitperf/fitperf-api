@@ -18,7 +18,7 @@ services:
         container_name: nginx_server
         restart: always
         volumes:
-            - ./config/nginx/conf.d:/etc/nginx/nginx.conf
+            - ./config/nginx/conf.d:/etc/nginx/conf.d
         ports:
             - 8000:80
         depends_on:
@@ -31,6 +31,7 @@ services:
           dockerfile: Dockerfile-prod
         container_name: fitperf-api
         restart: always
+        command: bash -c "./manage.py migrate && ./manage.py dbinit && ./manage.py collectstatic --no-input && gunicorn --chdir fitperf_api --bind :8000 fitperf_api.wsgi:application"
         volumes:
             - .:/app/src
             - static_volume:/app/static
@@ -43,7 +44,7 @@ services:
             - DB_NAME=${DB_NAME}
             - DJANGO_SUPERUSER_USERNAME=${DJANGO_SUPERUSER_USERNAME}
             - DJANGO_SUPERUSER_EMAIL=${DJANGO_SUPERUSER_EMAIL}
-            - DJANGO_SUPERUSER_PASSWORD='${DJANGO_SUPERUSER_PASSWORD}
+            - DJANGO_SUPERUSER_PASSWORD=${DJANGO_SUPERUSER_PASSWORD}
         depends_on:
             - db
         networks:
