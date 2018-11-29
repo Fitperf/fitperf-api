@@ -1,0 +1,59 @@
+version: "3"
+services:
+    db:
+        image: postgres:11.0
+        container_name: fitperf-postgres
+        ports:
+            - "5432"
+        environment:
+            - POSTGRES_USER=${DB_USER}
+            - POSTGRES_PASSWORD=${DB_PASSWORD}
+            - POSTGRES_DB=${DB_NAME}
+        volumes:
+            - fitperf-data:/var/lib/postgresql/data
+        networks:
+            - database_network
+    nginx:
+        image: nginx
+        container_name: nginx_server
+        restart: always
+        volumes:
+            - ./config/nginx/conf.d:/etc/nginx/nginx.conf
+        ports:
+            - 8000:80
+        depends_on:
+            - web
+        networks:
+            - nginx_network
+    web:
+        build: 
+          context: ./
+          dockerfile: Dockerfile-prod
+        container_name: fitperf-api
+        restart: always
+        volumes:
+            - .:/app/src
+            - static_volume:/app/static
+        environment:
+            - SECRET_KEY=${SECRET_KEY}
+            - DEBUG=${DEBUG}
+            - ALLOWED_HOSTS=${ALLOWED_HOSTS}
+            - DB_USER=${DB_USER}
+            - DB_PASSWORD=${DB_PASSWORD}
+            - DB_NAME=${DB_NAME}
+            - DJANGO_SUPERUSER_USERNAME=${DJANGO_SUPERUSER_USERNAME}
+            - DJANGO_SUPERUSER_EMAIL=${DJANGO_SUPERUSER_EMAIL}
+            - DJANGO_SUPERUSER_PASSWORD='${DJANGO_SUPERUSER_PASSWORD}
+        depends_on:
+            - db
+        networks:
+            - nginx_network
+            - database_network
+volumes:
+    fitperf-data:
+    static_volume:
+networks:
+    nginx_network:
+      driver: bridge
+    database_network:
+      driver: bridge

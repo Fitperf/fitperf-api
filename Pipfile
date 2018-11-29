@@ -13,6 +13,7 @@ django-allauth = "==0.37.1"
 coreapi = "==2.3.3"
 pyyaml = "*"
 django-rest-swagger = "==2.2.0"
+gunicorn = "*"
 
 [dev-packages]
 

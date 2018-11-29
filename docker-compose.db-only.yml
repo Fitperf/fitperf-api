@@ -1,0 +1,15 @@
+version: "3"
+services:
+    db:
+        image: postgres:11.0
+        container_name: fitperf-postgres
+        ports:
+            - "5432:5432"
+        environment:
+            - POSTGRES_USER=${DB_USER}
+            - POSTGRES_PASSWORD=${DB_PASSWORD}
+            - POSTGRES_DB=${DB_NAME}
+        volumes:
+            - fitperf-data:/var/lib/postgresql/data
+volumes:
+    fitperf-data:
