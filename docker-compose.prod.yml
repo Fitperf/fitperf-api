@@ -19,6 +19,7 @@ services:
         restart: always
         volumes:
             - ./config/nginx/conf.d:/etc/nginx/conf.d
+            - static_volume:/app/static
         ports:
             - 8000:80
         depends_on:
